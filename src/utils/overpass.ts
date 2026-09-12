@@ -9,6 +9,13 @@ import osmtogeojson from 'osmtogeojson';
 let lastBboxStr = '';
 let cachedGeoJSON: any = null;
 
+const OVERPASS_ENDPOINTS = [
+  'https://overpass-api.de/api/interpreter',
+  'https://lz4.overpass-api.de/api/interpreter',
+  'https://z.overpass-api.de/api/interpreter',
+  'https://overpass.kumi.systems/api/interpreter'
+];
+
 export async function fetchMapData(lat: number, lon: number, radiusMeters: number = 500) {
   // Approximate bounding box (1 degree latitude is approx 111,000 meters)
   const latDelta = radiusMeters / 111000;
@@ -48,18 +55,34 @@ export async function fetchMapData(lat: number, lon: number, radiusMeters: numbe
     out skel qt;
   `;
 
-  try {
-    const response = await fetch('https://overpass-api.de/api/interpreter', {
-      method: 'POST',
-      body: query
-    });
+  let osmData = null;
+  let success = false;
 
-    if (!response.ok) {
-      console.warn("Overpass API rate limit or error", response.status);
-      return null; // Silent fail, we'll try again later
+  for (const endpoint of OVERPASS_ENDPOINTS) {
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        body: query
+      });
+
+      if (response.ok) {
+        osmData = await response.json();
+        success = true;
+        break; // Success!
+      } else {
+        console.warn(`Overpass API ${endpoint} failed with status:`, response.status);
+      }
+    } catch (error) {
+      console.warn(`Failed to connect to ${endpoint}:`, error);
     }
+  }
 
-    const osmData = await response.json();
+  if (!success || !osmData) {
+    console.error("All Overpass endpoints failed or rate-limited.");
+    return null;
+  }
+
+  try {
     // Convert the raw OSM JSON to GeoJSON
     const geojson = osmtogeojson(osmData);
 
@@ -69,7 +92,7 @@ export async function fetchMapData(lat: number, lon: number, radiusMeters: numbe
 
     return geojson;
   } catch (error) {
-    console.error("Failed to fetch overpass data", error);
+    console.error("Failed to parse overpass data", error);
     return null;
   }
 }

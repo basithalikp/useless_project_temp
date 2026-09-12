@@ -15,6 +15,7 @@ function App() {
   const [isRidingHorse, setIsRidingHorse] = useState<boolean>(false);
   const [geoJsonData, setGeoJsonData] = useState<any>(null); // For MapLibre 3D Buildings
   const [nearbyPOIs, setNearbyPOIs] = useState<POI[]>([]);
+  const [mapDataFailed, setMapDataFailed] = useState<boolean>(false);
 
   const [isSatelliteMode, setIsSatelliteMode] = useState<boolean>(false);
 
@@ -27,6 +28,7 @@ function App() {
   const isMapDataLoadingRef = useRef<boolean>(true);
   const allPoisRef = useRef<POI[]>([]);
   const nearbyPOIsRef = useRef<POI[]>([]);
+  const lastFetchCenterRef = useRef<[number, number] | null>(null);
 
   // Function to fetch local GeoJSON for roads and buildings
   const fetchLocalData = async (lat: number, lon: number) => {
@@ -36,6 +38,10 @@ function App() {
       setGeoJsonData(data);
       geoJsonRef.current = data;
       allPoisRef.current = extractPOIs(data);
+      lastFetchCenterRef.current = [lat, lon];
+      setMapDataFailed(false);
+    } else {
+      setMapDataFailed(true);
     }
     isMapDataLoadingRef.current = false;
   };
@@ -61,13 +67,6 @@ function App() {
   useEffect(() => {
     // Initial fetch for the default position in case geolocation fails or is slow
     fetchLocalData(positionRef.current[0], positionRef.current[1]);
-    
-    // Then fetch every 10 seconds as we walk
-    const interval = setInterval(() => {
-      fetchLocalData(positionRef.current[0], positionRef.current[1]);
-    }, 10000);
-    
-    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -131,6 +130,14 @@ function App() {
 
         setPosition(constrainedPos);
         positionRef.current = constrainedPos;
+
+        // Fetch new data if we moved > 250m from the last fetch center (approx 0.000005 sq deg)
+        if (lastFetchCenterRef.current) {
+          const distFromCenterSq = (constrainedPos[0] - lastFetchCenterRef.current[0])**2 + (constrainedPos[1] - lastFetchCenterRef.current[1])**2;
+          if (distFromCenterSq > 0.000005 && !isMapDataLoadingRef.current) {
+            fetchLocalData(constrainedPos[0], constrainedPos[1]);
+          }
+        }
 
         // Check for nearby POIs (within ~50 meters => distSq < 0.0000002)
         const nearby = allPoisRef.current.filter(poi => {
@@ -207,7 +214,8 @@ function App() {
         <h1 className="text-lg font-bold text-blue-600 mb-1">Geo-Tale</h1>
         <p>Use <b>WASD</b> or the <b>Joystick</b> to move.</p>
         <p className="text-xs text-gray-500 mt-1">Movement is strictly constrained to real-world roads using local physics.</p>
-        {!geoJsonData && <p className="text-xs text-orange-500 font-bold mt-1">Loading 3D world data...</p>}
+        {!geoJsonData && !mapDataFailed && <p className="text-xs text-orange-500 font-bold mt-1">Loading 3D world data...</p>}
+        {mapDataFailed && <p className="text-xs text-red-500 font-bold mt-1">⚠️ Map server offline. Free movement enabled.</p>}
       </div>
 
       <JoystickOverlay onMove={handleJoystickMove} onStop={handleJoystickStop} />
