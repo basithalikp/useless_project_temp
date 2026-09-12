@@ -59,6 +59,7 @@ export const Map: React.FC<MapProps> = ({ position, avatarUrl, isArMode, geoJson
           'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
         ],
         tileSize: 256,
+        maxzoom: 18,
         attribution: 'Tiles &copy; Esri'
       }
     },
