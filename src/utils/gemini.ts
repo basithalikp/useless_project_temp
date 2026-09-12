@@ -26,7 +26,8 @@ export async function generateLoreForPOI(
   poiName: string,
   poiType: string,
   lorebook: LoreEntry[],
-  activeMission: Mission | null
+  activeMission: Mission | null,
+  almightyVision?: string
 ): Promise<GeminiResponse | null> {
   if (!GEMINI_API_KEY) {
     console.error("Gemini API key is missing!");
@@ -58,6 +59,10 @@ export async function generateLoreForPOI(
     ? `\n\nThe player is currently on a mission: "${activeMission.missionText}". Incorporate the resolution of this mission into the narrative if the location type matches '${activeMission.targetPOIType}'.`
     : '';
 
+  const almightyContext = almightyVision
+    ? `\n\nTHE ALMIGHTY HAS FORESEEN THIS FUTURE: You MUST incorporate the following detail into the story: "${almightyVision}"`
+    : '';
+
   const prompt = `You are a creative, whimsical storyteller for a location-based adventure game. 
 Generate a very short, engaging piece of lore (2 to 3 sentences maximum) about a real-world location.
 Location Name: "${poiName}"
@@ -65,7 +70,7 @@ Location Type: "${poiType}"
 
 Set the lore specifically in the year ${randomYear} (${era}). 
 Make it fit the location type, but add a fictional, adventurous, or mysterious twist. 
-Do not include any pleasantries, just the story.${historyContext}${missionContext}
+Do not include any pleasantries, just the story.${historyContext}${missionContext}${almightyContext}
 
 You MUST return your response as a valid JSON object matching exactly this schema:
 {

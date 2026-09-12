@@ -17,21 +17,29 @@ interface MapProps {
   setLorebook: React.Dispatch<React.SetStateAction<LoreEntry[]>>;
   activeMission: Mission | null;
   setActiveMission: React.Dispatch<React.SetStateAction<Mission | null>>;
+  selectedZanpakuto: 'kyoka_suigetsu' | 'almighty' | 'book_of_end';
+  almightyVisions: string[];
 }
 
 export const Map: React.FC<MapProps> = ({ 
   position, avatarUrl, isArMode, geoJsonData, isSatelliteMode, nearbyPOIs = [],
-  setXp, lorebook, setLorebook, activeMission, setActiveMission
+  setXp, lorebook, setLorebook, activeMission, setActiveMission,
+  selectedZanpakuto, almightyVisions
 }) => {
   const mapRef = useRef<any>(null);
   
   // Track generated lores for POIs. Key is poi.id
   const [lores, setLores] = useState<Record<string, { loading: boolean, text: string }>>({});
   const [activeLorePOI, setActiveLorePOI] = useState<POI | null>(null);
+  
+  // State for Kyoka Suigetsu editing
+  const [isEditingPresent, setIsEditingPresent] = useState<boolean>(false);
+  const [presentEditText, setPresentEditText] = useState<string>('');
 
   const handleRevealLore = async (poi: POI, e: React.MouseEvent) => {
     e.stopPropagation(); // prevent map click
     setActiveLorePOI(poi);
+    setIsEditingPresent(false);
     if (lores[poi.id]?.loading || lores[poi.id]?.text) return; // already loading or loaded
     
     // Award XP for discovering POI
@@ -52,7 +60,8 @@ export const Map: React.FC<MapProps> = ({
     setLores(prev => ({ ...prev, [poi.id]: { loading: true, text: '' } }));
     
     // Fetch JSON from Gemini API
-    const response = await generateLoreForPOI(poi.name, poi.type, lorebook, activeMission);
+    const almightyPrompt = almightyVisions.length > 0 ? almightyVisions.join('. ') : undefined;
+    const response = await generateLoreForPOI(poi.name, poi.type, lorebook, activeMission, almightyPrompt);
     
     if (response) {
       setLores(prev => ({ ...prev, [poi.id]: { loading: false, text: response.narrative } }));
@@ -308,11 +317,55 @@ export const Map: React.FC<MapProps> = ({
                   <p className="text-indigo-600 font-bold tracking-wide animate-pulse">Consulting the ancient spirits...</p>
                 </div>
               ) : lores[activeLorePOI.id]?.text ? (
-                <p className="text-xl text-gray-800 italic leading-relaxed text-center font-serif relative">
-                  <span className="text-5xl text-indigo-200 absolute -top-4 -left-6 leading-none">"</span>
-                  {lores[activeLorePOI.id].text}
-                  <span className="text-5xl text-indigo-200 absolute -bottom-8 -right-6 leading-none">"</span>
-                </p>
+                <div className="w-full relative group">
+                  {isEditingPresent ? (
+                    <div className="flex flex-col gap-3 w-full animate-fade-in-up">
+                      <textarea 
+                        value={presentEditText}
+                        onChange={(e) => setPresentEditText(e.target.value)}
+                        className="w-full bg-white border-2 border-indigo-200 rounded-xl p-4 font-serif text-gray-800 text-lg shadow-inner focus:outline-none focus:border-indigo-500"
+                        rows={4}
+                      />
+                      <div className="flex justify-end gap-2">
+                        <button 
+                          onClick={() => setIsEditingPresent(false)}
+                          className="px-4 py-2 text-indigo-600 font-bold hover:bg-indigo-50 rounded-lg transition-colors"
+                        >
+                          Cancel
+                        </button>
+                        <button 
+                          onClick={() => {
+                            setLores(prev => ({ ...prev, [activeLorePOI.id]: { loading: false, text: presentEditText } }));
+                            setLorebook(prev => prev.map(l => l.id === activeLorePOI.id ? { ...l, narrative: presentEditText } : l));
+                            setIsEditingPresent(false);
+                          }}
+                          className="px-4 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 shadow-md transition-colors"
+                        >
+                          Shatter Reality (Save)
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      {selectedZanpakuto === 'kyoka_suigetsu' && (
+                        <button 
+                          onClick={() => {
+                            setPresentEditText(lores[activeLorePOI.id].text);
+                            setIsEditingPresent(true);
+                          }}
+                          className="absolute -top-4 right-0 opacity-0 group-hover:opacity-100 bg-indigo-100 text-indigo-700 text-xs font-bold px-3 py-1.5 rounded-full shadow-sm hover:bg-indigo-200 transition-all"
+                        >
+                          Kyoka Suigetsu: Alter Reality
+                        </button>
+                      )}
+                      <p className="text-xl text-gray-800 italic leading-relaxed text-center font-serif relative px-8">
+                        <span className="text-5xl text-indigo-200 absolute -top-4 left-0 leading-none">"</span>
+                        {lores[activeLorePOI.id].text}
+                        <span className="text-5xl text-indigo-200 absolute -bottom-8 right-0 leading-none">"</span>
+                      </p>
+                    </>
+                  )}
+                </div>
               ) : (
                 <p className="text-gray-400 text-center italic">
                   Lore is mysteriously missing.

@@ -10,7 +10,15 @@ const DEFAULT_POSITION: [number, number] = [40.7812, -73.9665];
 
 function App() {
   const [position, setPosition] = useState<[number, number]>(DEFAULT_POSITION);
-  const [avatarUrl, setAvatarUrl] = useState<string>('');
+  const [selectedAvatar, setSelectedAvatar] = useState<'aizen' | 'yhwach' | 'tsukishima'>('aizen');
+  const [selectedZanpakuto, setSelectedZanpakuto] = useState<'kyoka_suigetsu' | 'almighty' | 'book_of_end'>('kyoka_suigetsu');
+  const [almightyVisions, setAlmightyVisions] = useState<string[]>([]);
+  const [isAlmightyModalOpen, setIsAlmightyModalOpen] = useState<boolean>(false);
+  
+  const [editingPastId, setEditingPastId] = useState<string | null>(null);
+  const [pastEditText, setPastEditText] = useState<string>('');
+  
+  const avatarUrl = `/${selectedAvatar}.jpg`;
   const [isArMode, setIsArMode] = useState<boolean>(false);
   const [isMoving, setIsMoving] = useState<boolean>(false);
   const [isRidingHorse, setIsRidingHorse] = useState<boolean>(false);
@@ -53,9 +61,6 @@ function App() {
   };
 
   useEffect(() => {
-    const randomSeed = Math.random().toString(36).substring(2, 8);
-    setAvatarUrl(`https://api.dicebear.com/9.x/lorelei/svg?seed=${randomSeed}&backgroundColor=b6e3f4,c0aede,d1d4f9`);
-
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
@@ -187,6 +192,8 @@ function App() {
         setLorebook={setLorebook}
         activeMission={activeMission}
         setActiveMission={setActiveMission}
+        selectedZanpakuto={selectedZanpakuto}
+        almightyVisions={almightyVisions}
       />
 
       {isArMode && <Character3D isMoving={isMoving} isRidingHorse={isRidingHorse} />}
@@ -206,11 +213,64 @@ function App() {
         </div>
       )}
 
+      {/* Almighty Visions Modal Button (Only if Almighty selected) */}
+      {selectedZanpakuto === 'almighty' && (
+        <div className="absolute bottom-[352px] right-4 z-[1000]">
+          <button
+            onClick={() => setIsAlmightyModalOpen(true)}
+            className="bg-red-800 text-white text-2xl p-3 w-14 h-14 flex items-center justify-center rounded-full drop-shadow-lg border-2 border-red-950 hover:scale-105 transition-transform animate-pulse"
+            title="The Almighty Visions"
+          >
+            👁️
+          </button>
+        </div>
+      )}
+
+      {/* Zanpakuto Selection (Hover Expand) */}
+      <div className="absolute bottom-[288px] right-4 z-[1000] flex flex-row-reverse items-center group">
+        <button className="w-14 h-14 rounded-full drop-shadow-lg border-2 border-purple-500 overflow-hidden relative z-10 flex-shrink-0 bg-gray-900">
+          <img src={`/${selectedZanpakuto}.jpg`} alt={selectedZanpakuto} className="w-full h-full object-cover" />
+        </button>
+        <div className="flex flex-row-reverse items-center overflow-hidden transition-all duration-300 max-w-0 opacity-0 group-hover:max-w-xs group-hover:opacity-100 group-hover:mr-2">
+          <div className="flex gap-2 p-1 bg-black/40 backdrop-blur rounded-full">
+            {(['kyoka_suigetsu', 'almighty', 'book_of_end'] as const).filter(z => z !== selectedZanpakuto).map(z => (
+              <button 
+                key={z} 
+                onClick={() => setSelectedZanpakuto(z)} 
+                className="w-12 h-12 rounded-full border-2 border-transparent hover:border-purple-400 overflow-hidden bg-gray-900"
+              >
+                <img src={`/${z}.jpg`} alt={z} className="w-full h-full object-cover" />
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Avatar Selection (Hover Expand) */}
+      <div className="absolute bottom-[224px] right-4 z-[1000] flex flex-row-reverse items-center group">
+        <button className="w-14 h-14 rounded-full drop-shadow-lg border-2 border-blue-500 overflow-hidden relative z-10 flex-shrink-0 bg-gray-900">
+          <img src={`/${selectedAvatar}.jpg`} alt={selectedAvatar} className="w-full h-full object-cover" />
+        </button>
+        <div className="flex flex-row-reverse items-center overflow-hidden transition-all duration-300 max-w-0 opacity-0 group-hover:max-w-xs group-hover:opacity-100 group-hover:mr-2">
+          <div className="flex gap-2 p-1 bg-black/40 backdrop-blur rounded-full">
+            {(['aizen', 'yhwach', 'tsukishima'] as const).filter(a => a !== selectedAvatar).map(a => (
+              <button 
+                key={a} 
+                onClick={() => setSelectedAvatar(a)} 
+                className="w-12 h-12 rounded-full border-2 border-transparent hover:border-blue-400 overflow-hidden bg-gray-900"
+              >
+                <img src={`/${a}.jpg`} alt={a} className="w-full h-full object-cover" />
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* Lorebook Button (positioned above the horse button) */}
       <div className="absolute bottom-40 right-4 z-[1000]">
         <button
           onClick={() => setIsLorebookOpen(true)}
-          className="bg-[#8b5a2b] text-white text-2xl p-3 rounded-full drop-shadow-lg border-2 border-[#5c3a21] hover:scale-105 transition-transform"
+          className="bg-[#8b5a2b] text-white text-2xl w-14 h-14 flex items-center justify-center p-3 rounded-full drop-shadow-lg border-2 border-[#5c3a21] hover:scale-105 transition-transform"
           title="Open Lorebook"
         >
           📖
@@ -287,13 +347,102 @@ function App() {
                 </div>
               ) : (
                 lorebook.map((entry, idx) => (
-                  <div key={idx} className="border-b border-[#d2b48c] pb-4 last:border-0 relative">
+                  <div key={idx} className="border-b border-[#d2b48c] pb-4 last:border-0 relative group">
                     <span className="absolute top-0 right-0 text-[10px] font-bold text-[#8b5a2b]/60 uppercase bg-[#d2b48c]/30 px-2 py-0.5 rounded-full">{entry.poiType}</span>
-                    <h3 className="font-serif font-bold text-[#5c3a21] text-lg mb-2 pr-20">{entry.poiName}</h3>
-                    <p className="font-serif text-[#3e2723] leading-relaxed text-sm md:text-base">"{entry.narrative}"</p>
+                    <h3 className="font-serif font-bold text-[#5c3a21] text-lg mb-2 pr-20 flex items-center gap-2">
+                      {entry.poiName}
+                      {selectedZanpakuto === 'book_of_end' && editingPastId !== entry.id && (
+                        <button 
+                          onClick={() => { setEditingPastId(entry.id); setPastEditText(entry.narrative); }}
+                          className="opacity-0 group-hover:opacity-100 bg-[#5c3a21] text-[#f4ebd0] text-[10px] px-2 py-1 rounded transition-opacity"
+                        >
+                          Book of the End: Alter Past
+                        </button>
+                      )}
+                    </h3>
+                    
+                    {editingPastId === entry.id ? (
+                      <div className="flex flex-col gap-2">
+                        <textarea 
+                          value={pastEditText}
+                          onChange={(e) => setPastEditText(e.target.value)}
+                          className="w-full bg-[#f4ebd0] border-2 border-[#8b5a2b] rounded p-2 font-serif text-[#3e2723] focus:outline-none"
+                          rows={3}
+                        />
+                        <div className="flex gap-2 justify-end">
+                          <button 
+                            onClick={() => setEditingPastId(null)}
+                            className="text-sm text-[#8b5a2b] font-bold"
+                          >
+                            Cancel
+                          </button>
+                          <button 
+                            onClick={() => {
+                              setLorebook(prev => prev.map(l => l.id === entry.id ? { ...l, narrative: pastEditText } : l));
+                              setEditingPastId(null);
+                            }}
+                            className="text-sm bg-[#8b5a2b] text-[#f4ebd0] px-3 py-1 rounded font-bold"
+                          >
+                            Rewrite Reality
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="font-serif text-[#3e2723] leading-relaxed text-sm md:text-base">"{entry.narrative}"</p>
+                    )}
                   </div>
                 ))
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Almighty Visions Modal */}
+      {isAlmightyModalOpen && (
+        <div className="absolute inset-0 z-[99999] bg-red-950/80 backdrop-blur-sm flex justify-center items-center p-4 md:p-12 pointer-events-auto">
+          <div className="bg-[#1a0f0f] w-full max-w-2xl h-full max-h-[80vh] rounded-xl shadow-2xl overflow-hidden flex flex-col border-4 border-red-800 animate-fade-in-up">
+            <div className="bg-red-900 text-red-50 p-4 flex justify-between items-center shadow-md z-10">
+              <h2 className="text-2xl font-serif font-bold tracking-widest uppercase text-red-200">The Almighty Visions</h2>
+              <button onClick={() => setIsAlmightyModalOpen(false)} className="text-red-200 text-xl font-bold hover:text-white transition-colors p-2">✕</button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              <p className="text-red-400 italic text-sm text-center">Gaze into the future. Whatever you write here will become reality.</p>
+              
+              <div className="flex flex-col gap-2 mb-6">
+                <textarea 
+                  value={pastEditText} 
+                  onChange={(e) => setPastEditText(e.target.value)}
+                  placeholder="The player encounters a hidden dragon..."
+                  className="w-full bg-[#2a1a1a] border-2 border-red-800 rounded p-3 font-serif text-red-200 focus:outline-none focus:border-red-500 placeholder-red-800/50"
+                  rows={3}
+                />
+                <button 
+                  onClick={() => {
+                    if(pastEditText.trim()) {
+                      setAlmightyVisions(prev => [pastEditText.trim(), ...prev]);
+                      setPastEditText('');
+                    }
+                  }}
+                  className="bg-red-800 hover:bg-red-700 text-white font-bold py-2 rounded transition-colors"
+                >
+                  See the Future
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {almightyVisions.map((vision, idx) => (
+                  <div key={idx} className="bg-red-950/50 border border-red-900 p-3 rounded flex justify-between items-start gap-4">
+                    <p className="text-red-300 font-serif text-sm">"{vision}"</p>
+                    <button 
+                      onClick={() => setAlmightyVisions(prev => prev.filter((_, i) => i !== idx))}
+                      className="text-red-500 hover:text-red-400 text-xs font-bold shrink-0"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
