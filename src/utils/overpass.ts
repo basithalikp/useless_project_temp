@@ -9,14 +9,7 @@ import osmtogeojson from 'osmtogeojson';
 let lastBboxStr = '';
 let cachedGeoJSON: any = null;
 
-const OVERPASS_ENDPOINTS = [
-  'https://overpass-api.de/api/interpreter',
-  'https://lz4.overpass-api.de/api/interpreter',
-  'https://z.overpass-api.de/api/interpreter',
-  'https://overpass.kumi.systems/api/interpreter'
-];
-
-export async function fetchMapData(lat: number, lon: number, radiusMeters: number = 500) {
+export async function fetchMapData(lat: number, lon: number, radiusMeters: number = 250) {
   // Approximate bounding box (1 degree latitude is approx 111,000 meters)
   const latDelta = radiusMeters / 111000;
   const lonDelta = radiusMeters / (111000 * Math.cos(lat * (Math.PI / 180)));
@@ -26,65 +19,29 @@ export async function fetchMapData(lat: number, lon: number, radiusMeters: numbe
   const w = lon - lonDelta;
   const e = lon + lonDelta;
 
-  const bbox = `${s},${w},${n},${e}`;
+  // OSM API bbox format is: min_lon, min_lat, max_lon, max_lat
+  const bbox = `${w},${s},${e},${n}`;
   
   // If we've already fetched this approximate area recently, return cache
   if (lastBboxStr === bbox && cachedGeoJSON) {
     return cachedGeoJSON;
   }
 
-  // We query both buildings and highways.
-  // Note: we extract 'name' and 'height' if available.
-  const query = `
-    [out:json][timeout:25];
-    (
-      way["building"](${bbox});
-      relation["building"](${bbox});
-      way["highway"](${bbox});
-      node["amenity"](${bbox});
-      way["amenity"](${bbox});
-      node["shop"](${bbox});
-      way["shop"](${bbox});
-      node["tourism"](${bbox});
-      way["tourism"](${bbox});
-      node["leisure"](${bbox});
-      way["leisure"](${bbox});
-    );
-    out body;
-    >;
-    out skel qt;
-  `;
-
-  let osmData = null;
-  let success = false;
-
-  for (const endpoint of OVERPASS_ENDPOINTS) {
-    try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        body: query
-      });
-
-      if (response.ok) {
-        osmData = await response.json();
-        success = true;
-        break; // Success!
-      } else {
-        console.warn(`Overpass API ${endpoint} failed with status:`, response.status);
-      }
-    } catch (error) {
-      console.warn(`Failed to connect to ${endpoint}:`, error);
-    }
-  }
-
-  if (!success || !osmData) {
-    console.error("All Overpass endpoints failed or rate-limited.");
-    return null;
-  }
+  const endpoint = `https://api.openstreetmap.org/api/0.6/map?bbox=${bbox}`;
 
   try {
-    // Convert the raw OSM JSON to GeoJSON
-    const geojson = osmtogeojson(osmData);
+    const response = await fetch(endpoint);
+
+    if (!response.ok) {
+      console.error(`OSM API failed with status:`, response.status);
+      return null;
+    }
+
+    const osmXml = await response.text();
+    const dom = new DOMParser().parseFromString(osmXml, 'text/xml');
+
+    // Convert the raw OSM XML DOM to GeoJSON
+    const geojson = osmtogeojson(dom);
 
     // Cache the result
     lastBboxStr = bbox;
@@ -92,7 +49,7 @@ export async function fetchMapData(lat: number, lon: number, radiusMeters: numbe
 
     return geojson;
   } catch (error) {
-    console.error("Failed to parse overpass data", error);
+    console.error("Failed to fetch or parse OSM data", error);
     return null;
   }
 }

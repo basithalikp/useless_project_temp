@@ -33,7 +33,7 @@ function App() {
   // Function to fetch local GeoJSON for roads and buildings
   const fetchLocalData = async (lat: number, lon: number) => {
     isMapDataLoadingRef.current = true;
-    const data = await fetchMapData(lat, lon, 500); // 500m radius
+    const data = await fetchMapData(lat, lon, 250); // 250m radius
     if (data) {
       setGeoJsonData(data);
       geoJsonRef.current = data;
@@ -131,10 +131,10 @@ function App() {
         setPosition(constrainedPos);
         positionRef.current = constrainedPos;
 
-        // Fetch new data if we moved > 250m from the last fetch center (approx 0.000005 sq deg)
+        // Fetch new data if we moved > 150m from the last fetch center (approx 0.0000018 sq deg)
         if (lastFetchCenterRef.current) {
           const distFromCenterSq = (constrainedPos[0] - lastFetchCenterRef.current[0])**2 + (constrainedPos[1] - lastFetchCenterRef.current[1])**2;
-          if (distFromCenterSq > 0.000005 && !isMapDataLoadingRef.current) {
+          if (distFromCenterSq > 0.0000018 && !isMapDataLoadingRef.current) {
             fetchLocalData(constrainedPos[0], constrainedPos[1]);
           }
         }
