@@ -34,6 +34,14 @@ export async function fetchMapData(lat: number, lon: number, radiusMeters: numbe
       way["building"](${bbox});
       relation["building"](${bbox});
       way["highway"](${bbox});
+      node["amenity"](${bbox});
+      way["amenity"](${bbox});
+      node["shop"](${bbox});
+      way["shop"](${bbox});
+      node["tourism"](${bbox});
+      way["tourism"](${bbox});
+      node["leisure"](${bbox});
+      way["leisure"](${bbox});
     );
     out body;
     >;
@@ -133,4 +141,66 @@ export function constrainToRoads(
   }
 
   return [proposedLat, proposedLon];
+}
+
+export interface POI {
+  id: string;
+  name: string;
+  type: string;
+  lat: number;
+  lon: number;
+}
+
+/**
+ * Extracts Points of Interest from the GeoJSON data.
+ * Calculates the center if the POI is a polygon.
+ */
+export function extractPOIs(geojson: any): POI[] {
+  if (!geojson || !geojson.features) return [];
+
+  const pois: POI[] = [];
+
+  for (const feature of geojson.features) {
+    const props = feature.properties;
+    if (!props || !props.name) continue;
+
+    let type = '';
+    if (props.amenity) type = props.amenity;
+    else if (props.shop) type = props.shop;
+    else if (props.tourism) type = props.tourism;
+    else if (props.leisure) type = props.leisure;
+    else continue; // Not a POI
+
+    const geom = feature.geometry;
+    let lat = 0;
+    let lon = 0;
+
+    if (geom.type === 'Point') {
+      lon = geom.coordinates[0];
+      lat = geom.coordinates[1];
+    } else if (geom.type === 'Polygon') {
+      // Simple centroid for the outer ring
+      const ring = geom.coordinates[0];
+      let sumLat = 0;
+      let sumLon = 0;
+      for (const coord of ring) {
+        sumLon += coord[0];
+        sumLat += coord[1];
+      }
+      lon = sumLon / ring.length;
+      lat = sumLat / ring.length;
+    } else {
+      continue;
+    }
+
+    pois.push({
+      id: feature.id || Math.random().toString(),
+      name: props.name,
+      type: type,
+      lat,
+      lon
+    });
+  }
+
+  return pois;
 }

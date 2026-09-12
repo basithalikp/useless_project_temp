@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useMemo } from 'react';
-import MapLibreMap, { Layer, Source } from 'react-map-gl/maplibre';
+import MapLibreMap, { Layer, Source, Marker } from 'react-map-gl/maplibre';
+import type { POI } from '../utils/overpass';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 interface MapProps {
@@ -8,9 +9,10 @@ interface MapProps {
   isArMode: boolean;
   geoJsonData: any;
   isSatelliteMode: boolean;
+  nearbyPOIs?: POI[];
 }
 
-export const Map: React.FC<MapProps> = ({ position, avatarUrl, isArMode, geoJsonData, isSatelliteMode }) => {
+export const Map: React.FC<MapProps> = ({ position, avatarUrl, isArMode, geoJsonData, isSatelliteMode, nearbyPOIs = [] }) => {
   const mapRef = useRef<any>(null);
 
   useEffect(() => {
@@ -159,6 +161,37 @@ export const Map: React.FC<MapProps> = ({ position, avatarUrl, isArMode, geoJson
               />
             </div>
           )}
+
+          {/* Render Nearby POI Popups */}
+          {nearbyPOIs.map((poi) => {
+            // Using picsum photos with a seeded ID so it stays consistent per POI ID
+            // or loremflickr with a keyword
+            const imgUrl = `https://loremflickr.com/150/150/${poi.type}?lock=${poi.id.replace(/\D/g, '') || '1'}`;
+            
+            return (
+              <Marker 
+                key={poi.id} 
+                longitude={poi.lon} 
+                latitude={poi.lat} 
+                anchor="bottom"
+              >
+                <div className="bg-white rounded-xl p-2 shadow-2xl border-2 border-indigo-200 flex flex-col items-center w-36 pointer-events-auto transform hover:scale-105 transition-transform cursor-pointer"
+                     onClick={() => alert(`AI Lore for ${poi.name} will be generated here in the future!`)}
+                >
+                  <img src={imgUrl} alt={poi.type} className="w-full h-20 object-cover rounded-lg mb-2 bg-gray-100" />
+                  <h3 className="text-sm font-bold text-gray-800 text-center leading-tight line-clamp-2">{poi.name}</h3>
+                  <span className="text-[10px] uppercase font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full mt-1">
+                    {poi.type}
+                  </span>
+                  <button className="mt-2 w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-1 px-2 rounded transition-colors">
+                    Reveal Lore 📖
+                  </button>
+                  {/* Tooltip triangle at the bottom */}
+                  <div className="absolute -bottom-2 w-4 h-4 bg-white border-b-2 border-r-2 border-indigo-200 transform rotate-45"></div>
+                </div>
+              </Marker>
+            );
+          })}
         </MapLibreMap>
       </div>
     </div>

@@ -2,7 +2,8 @@ import { useEffect, useState, useRef } from 'react';
 import { Map } from './components/Map';
 import { JoystickOverlay } from './components/JoystickOverlay';
 import { Character3D } from './components/Character3D';
-import { fetchMapData, constrainToRoads } from './utils/overpass';
+import { fetchMapData, constrainToRoads, extractPOIs } from './utils/overpass';
+import type { POI } from './utils/overpass';
 
 const DEFAULT_POSITION: [number, number] = [40.7812, -73.9665];
 
@@ -13,6 +14,7 @@ function App() {
   const [isMoving, setIsMoving] = useState<boolean>(false);
   const [isRidingHorse, setIsRidingHorse] = useState<boolean>(false);
   const [geoJsonData, setGeoJsonData] = useState<any>(null); // For MapLibre 3D Buildings
+  const [nearbyPOIs, setNearbyPOIs] = useState<POI[]>([]);
 
   const [isSatelliteMode, setIsSatelliteMode] = useState<boolean>(false);
 
@@ -23,6 +25,8 @@ function App() {
   const geoJsonRef = useRef<any>(null);
   const isRidingHorseRef = useRef<boolean>(false);
   const isMapDataLoadingRef = useRef<boolean>(true);
+  const allPoisRef = useRef<POI[]>([]);
+  const nearbyPOIsRef = useRef<POI[]>([]);
 
   // Function to fetch local GeoJSON for roads and buildings
   const fetchLocalData = async (lat: number, lon: number) => {
@@ -31,6 +35,7 @@ function App() {
     if (data) {
       setGeoJsonData(data);
       geoJsonRef.current = data;
+      allPoisRef.current = extractPOIs(data);
     }
     isMapDataLoadingRef.current = false;
   };
@@ -126,6 +131,18 @@ function App() {
 
         setPosition(constrainedPos);
         positionRef.current = constrainedPos;
+
+        // Check for nearby POIs (within ~50 meters => distSq < 0.0000002)
+        const nearby = allPoisRef.current.filter(poi => {
+          const distSq = (poi.lat - positionRef.current[0])**2 + (poi.lon - positionRef.current[1])**2;
+          return distSq < 0.0000002; 
+        });
+        
+        // Update state only if changed
+        if (nearby.length !== nearbyPOIsRef.current.length || !nearby.every((n, i) => n.id === nearbyPOIsRef.current[i]?.id)) {
+          nearbyPOIsRef.current = nearby;
+          setNearbyPOIs(nearby);
+        }
       }
 
       animationRef.current = requestAnimationFrame(updateLoop);
@@ -151,6 +168,7 @@ function App() {
         isArMode={isArMode}
         geoJsonData={geoJsonData}
         isSatelliteMode={isSatelliteMode}
+        nearbyPOIs={nearbyPOIs}
       />
 
       {isArMode && <Character3D isMoving={isMoving} isRidingHorse={isRidingHorse} />}
