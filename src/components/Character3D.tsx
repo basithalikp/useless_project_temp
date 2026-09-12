@@ -4,6 +4,7 @@ import * as THREE from 'three'
 
 interface ModelProps {
   isMoving: boolean;
+  isRidingHorse?: boolean;
 }
 
 function ProgrammaticChibi({ isMoving }: ModelProps) {
@@ -88,13 +89,79 @@ function ProgrammaticChibi({ isMoving }: ModelProps) {
   )
 }
 
-export const Character3D: React.FC<ModelProps> = ({ isMoving }) => {
+function ProgrammaticHorse({ isMoving }: { isMoving: boolean }) {
+  const group = useRef<THREE.Group>(null)
+  
+  useFrame((state) => {
+    if (group.current) {
+      if (isMoving) {
+        group.current.position.y = Math.sin(state.clock.elapsedTime * 20) * 0.1 - 0.2; // Galloping bounce
+        group.current.rotation.x = Math.sin(state.clock.elapsedTime * 20) * 0.05; 
+      } else {
+        group.current.position.y = -0.2;
+        group.current.rotation.x = 0;
+      }
+    }
+  })
+
+  const horseColor = "#8B4513"; // SaddleBrown
+  const maneColor = "#3e1c00";
+
+  return (
+    <group ref={group} position={[0, -0.2, 0]} scale={0.6}>
+      {/* Body */}
+      <mesh position={[0, 0.5, 0]}>
+        <boxGeometry args={[0.5, 0.4, 0.9]} />
+        <meshStandardMaterial color={horseColor} />
+      </mesh>
+      {/* Tail */}
+      <mesh position={[0, 0.5, -0.5]} rotation={[0.5, 0, 0]}>
+        <boxGeometry args={[0.1, 0.3, 0.1]} />
+        <meshStandardMaterial color={maneColor} />
+      </mesh>
+      {/* Neck */}
+      <mesh position={[0, 0.8, 0.4]} rotation={[0.5, 0, 0]}>
+        <boxGeometry args={[0.2, 0.5, 0.2]} />
+        <meshStandardMaterial color={horseColor} />
+      </mesh>
+      {/* Head */}
+      <mesh position={[0, 1.1, 0.5]}>
+        <boxGeometry args={[0.25, 0.25, 0.4]} />
+        <meshStandardMaterial color={horseColor} />
+      </mesh>
+      {/* Legs */}
+      <mesh position={[-0.2, 0.1, 0.3]}>
+        <boxGeometry args={[0.1, 0.4, 0.1]} />
+        <meshStandardMaterial color={horseColor} />
+      </mesh>
+      <mesh position={[0.2, 0.1, 0.3]}>
+        <boxGeometry args={[0.1, 0.4, 0.1]} />
+        <meshStandardMaterial color={horseColor} />
+      </mesh>
+      <mesh position={[-0.2, 0.1, -0.3]}>
+        <boxGeometry args={[0.1, 0.4, 0.1]} />
+        <meshStandardMaterial color={horseColor} />
+      </mesh>
+      <mesh position={[0.2, 0.1, -0.3]}>
+        <boxGeometry args={[0.1, 0.4, 0.1]} />
+        <meshStandardMaterial color={horseColor} />
+      </mesh>
+    </group>
+  )
+}
+
+export const Character3D: React.FC<ModelProps> = ({ isMoving, isRidingHorse }) => {
   return (
     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 pointer-events-none z-[500]">
       <Canvas camera={{ position: [0, 1.5, 3], fov: 50 }}>
         <ambientLight intensity={1.5} />
         <directionalLight position={[5, 10, 5]} intensity={2} castShadow />
-        <ProgrammaticChibi isMoving={isMoving} />
+        
+        {isRidingHorse && <ProgrammaticHorse isMoving={isMoving} />}
+        
+        <group position={[0, isRidingHorse ? 0.4 : 0, 0]}>
+          <ProgrammaticChibi isMoving={isMoving} />
+        </group>
       </Canvas>
     </div>
   )

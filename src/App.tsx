@@ -11,8 +11,9 @@ function App() {
   const [avatarUrl, setAvatarUrl] = useState<string>('');
   const [isArMode, setIsArMode] = useState<boolean>(false);
   const [isMoving, setIsMoving] = useState<boolean>(false);
+  const [isRidingHorse, setIsRidingHorse] = useState<boolean>(false);
   const [geoJsonData, setGeoJsonData] = useState<any>(null); // For MapLibre 3D Buildings
-  
+
   const [isSatelliteMode, setIsSatelliteMode] = useState<boolean>(false);
 
   const joystickRef = useRef<{ x: number; y: number } | null>(null);
@@ -20,6 +21,19 @@ function App() {
   const animationRef = useRef<number | null>(null);
   const positionRef = useRef<[number, number]>(DEFAULT_POSITION);
   const geoJsonRef = useRef<any>(null);
+  const isRidingHorseRef = useRef<boolean>(false);
+  const isMapDataLoadingRef = useRef<boolean>(true);
+
+  // Function to fetch local GeoJSON for roads and buildings
+  const fetchLocalData = async (lat: number, lon: number) => {
+    isMapDataLoadingRef.current = true;
+    const data = await fetchMapData(lat, lon, 500); // 500m radius
+    if (data) {
+      setGeoJsonData(data);
+      geoJsonRef.current = data;
+    }
+    isMapDataLoadingRef.current = false;
+  };
 
   useEffect(() => {
     const randomSeed = Math.random().toString(36).substring(2, 8);
@@ -30,6 +44,8 @@ function App() {
         (pos) => {
           setPosition([pos.coords.latitude, pos.coords.longitude]);
           positionRef.current = [pos.coords.latitude, pos.coords.longitude];
+          // Fetch map data immediately for the user's real location
+          fetchLocalData(pos.coords.latitude, pos.coords.longitude);
         },
         (err) => console.warn("Geolocation failed", err),
         { enableHighAccuracy: true }
@@ -37,20 +53,15 @@ function App() {
     }
   }, []);
 
-  // Fetch local GeoJSON for roads and buildings via Overpass
   useEffect(() => {
-    const fetchLocalData = async () => {
-      const [lat, lon] = positionRef.current;
-      const data = await fetchMapData(lat, lon, 500); // 500m radius
-      if (data) {
-        setGeoJsonData(data);
-        geoJsonRef.current = data;
-      }
-    };
-
-    // Fetch immediately, then every 10 seconds to ensure we have chunks loaded as we walk
-    fetchLocalData();
-    const interval = setInterval(fetchLocalData, 10000);
+    // Initial fetch for the default position in case geolocation fails or is slow
+    fetchLocalData(positionRef.current[0], positionRef.current[1]);
+    
+    // Then fetch every 10 seconds as we walk
+    const interval = setInterval(() => {
+      fetchLocalData(positionRef.current[0], positionRef.current[1]);
+    }, 10000);
+    
     return () => clearInterval(interval);
   }, []);
 
@@ -98,14 +109,21 @@ function App() {
       setIsMoving(currentlyMoving);
 
       if (currentlyMoving) {
-        const calibratedSpeed = 0.0000000300 * deltaTime;
-        
+        // Prevent movement only during initial active loading. If API fails, fallback to free movement.
+        if (isMapDataLoadingRef.current && !geoJsonRef.current) {
+          animationRef.current = requestAnimationFrame(updateLoop);
+          return;
+        }
+
+        const speedMultiplier = isRidingHorseRef.current ? 0.0000001500 : 0.0000000300;
+        const calibratedSpeed = speedMultiplier * deltaTime;
+
         const proposedLat = positionRef.current[0] + dy * calibratedSpeed;
         const proposedLon = positionRef.current[1] + dx * calibratedSpeed;
 
         // Apply strict physics constraint!
         const constrainedPos = constrainToRoads(proposedLat, proposedLon, geoJsonRef.current);
-        
+
         setPosition(constrainedPos);
         positionRef.current = constrainedPos;
       }
@@ -127,24 +145,39 @@ function App() {
 
   return (
     <div className="w-screen h-screen relative font-sans overflow-hidden bg-[#b6e3f4]">
-      <Map 
-        position={position} 
-        avatarUrl={avatarUrl} 
-        isArMode={isArMode} 
-        geoJsonData={geoJsonData} 
+      <Map
+        position={position}
+        avatarUrl={avatarUrl}
+        isArMode={isArMode}
+        geoJsonData={geoJsonData}
         isSatelliteMode={isSatelliteMode}
       />
-      
-      {isArMode && <Character3D isMoving={isMoving} />}
-      
+
+      {isArMode && <Character3D isMoving={isMoving} isRidingHorse={isRidingHorse} />}
+
+      {isArMode && (
+        <div className="absolute bottom-24 right-4 z-[1000]">
+          <button
+            onClick={() => {
+              setIsRidingHorse(!isRidingHorse);
+              isRidingHorseRef.current = !isRidingHorse;
+            }}
+            className={`bg-white text-3xl p-3 rounded-full drop-shadow-lg border-4 transition-transform ${isRidingHorse ? 'border-orange-500 scale-110' : 'border-gray-300 hover:scale-105'}`}
+            title={isRidingHorse ? "Dismount Horse" : "Ride Horse"}
+          >
+            🐎
+          </button>
+        </div>
+      )}
+
       <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2">
-        <button 
+        <button
           onClick={() => setIsArMode(!isArMode)}
           className="bg-white text-blue-600 font-bold py-2 px-6 rounded-full drop-shadow-md border-2 border-blue-500 hover:bg-blue-50 transition-colors"
         >
           {isArMode ? '🔙 Revert to Classic 2D' : '🦊 Pokemon Go Mode'}
         </button>
-        <button 
+        <button
           onClick={() => setIsSatelliteMode(!isSatelliteMode)}
           className="bg-gray-800 text-white font-bold py-2 px-6 rounded-full drop-shadow-md border-2 border-gray-600 hover:bg-gray-700 transition-colors"
         >
