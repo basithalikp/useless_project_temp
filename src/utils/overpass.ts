@@ -144,12 +144,33 @@ export function extractPOIs(geojson: any): POI[] {
     const props = feature.properties;
     if (!props || !props.name) continue;
 
-    let type = '';
-    if (props.amenity) type = props.amenity;
-    else if (props.shop) type = props.shop;
-    else if (props.tourism) type = props.tourism;
-    else if (props.leisure) type = props.leisure;
+    let rawType = '';
+    if (props.amenity) rawType = props.amenity;
+    else if (props.shop) rawType = props.shop;
+    else if (props.tourism) rawType = props.tourism;
+    else if (props.leisure) rawType = props.leisure;
     else continue; // Not a POI
+
+    let type = rawType;
+    const t = rawType.toLowerCase();
+    
+    if (['restaurant', 'cafe', 'fast_food', 'bar', 'pub', 'food_court', 'biergarten', 'hotel', 'motel', 'hostel', 'guest_house'].includes(t)) {
+      type = 'hotel';
+    } else if (props.shop || ['marketplace', 'supermarket', 'convenience', 'mall'].includes(t)) {
+      type = 'market';
+    } else if (['hospital', 'clinic', 'doctors', 'dentist', 'pharmacy'].includes(t)) {
+      type = 'hospital';
+    } else if (['school', 'university', 'college', 'kindergarten'].includes(t)) {
+      type = 'school';
+    } else if (props.leisure || ['park', 'pitch', 'garden', 'playground', 'stadium', 'sports_centre'].includes(t)) {
+      type = 'park';
+    } else if (props.tourism || ['museum', 'gallery', 'artwork', 'attraction', 'viewpoint', 'cinema', 'theatre'].includes(t)) {
+      type = 'museum';
+    } else if (['bank', 'atm', 'post_office', 'police', 'fire_station'].includes(t)) {
+      type = 'bank';
+    } else {
+      type = 'landmark'; // fallback for uncategorized amenities
+    }
 
     const geom = feature.geometry;
     let lat = 0;

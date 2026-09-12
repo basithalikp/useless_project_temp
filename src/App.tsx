@@ -4,6 +4,7 @@ import { JoystickOverlay } from './components/JoystickOverlay';
 import { Character3D } from './components/Character3D';
 import { fetchMapData, constrainToRoads, extractPOIs } from './utils/overpass';
 import type { POI } from './utils/overpass';
+import type { LoreEntry, Mission } from './utils/gemini';
 
 const DEFAULT_POSITION: [number, number] = [40.7812, -73.9665];
 
@@ -18,6 +19,11 @@ function App() {
   const [mapDataFailed, setMapDataFailed] = useState<boolean>(false);
 
   const [isSatelliteMode, setIsSatelliteMode] = useState<boolean>(false);
+
+  const [xp, setXp] = useState<number>(0);
+  const [lorebook, setLorebook] = useState<LoreEntry[]>([]);
+  const [activeMission, setActiveMission] = useState<Mission | null>(null);
+  const [isLorebookOpen, setIsLorebookOpen] = useState<boolean>(false);
 
   const joystickRef = useRef<{ x: number; y: number } | null>(null);
   const keysRef = useRef<{ w: boolean; a: boolean; s: boolean; d: boolean }>({ w: false, a: false, s: false, d: false });
@@ -176,6 +182,11 @@ function App() {
         geoJsonData={geoJsonData}
         isSatelliteMode={isSatelliteMode}
         nearbyPOIs={nearbyPOIs}
+        setXp={setXp}
+        lorebook={lorebook}
+        setLorebook={setLorebook}
+        activeMission={activeMission}
+        setActiveMission={setActiveMission}
       />
 
       {isArMode && <Character3D isMoving={isMoving} isRidingHorse={isRidingHorse} />}
@@ -194,6 +205,17 @@ function App() {
           </button>
         </div>
       )}
+
+      {/* Lorebook Button (positioned above the horse button) */}
+      <div className="absolute bottom-40 right-4 z-[1000]">
+        <button
+          onClick={() => setIsLorebookOpen(true)}
+          className="bg-[#8b5a2b] text-white text-2xl p-3 rounded-full drop-shadow-lg border-2 border-[#5c3a21] hover:scale-105 transition-transform"
+          title="Open Lorebook"
+        >
+          📖
+        </button>
+      </div>
 
       <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2">
         <button
@@ -218,7 +240,64 @@ function App() {
         {mapDataFailed && <p className="text-xs text-red-500 font-bold mt-1">⚠️ Map server offline. Free movement enabled.</p>}
       </div>
 
+      {/* Mission UI */}
+      <div className="absolute bottom-4 left-4 z-[1000] w-72 pointer-events-none">
+        <div className="bg-white/95 backdrop-blur-md rounded-2xl p-4 shadow-2xl border border-indigo-100 pointer-events-auto">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="font-bold text-indigo-900 text-sm flex items-center gap-1">
+              <span>🎯</span> Active Mission
+            </h3>
+            <span className="bg-indigo-100 text-indigo-700 text-xs font-black px-2 py-1 rounded-full">
+              {xp} XP
+            </span>
+          </div>
+          {activeMission ? (
+            <div>
+              <p className="text-xs text-gray-600 leading-tight mb-2">
+                {activeMission.missionText}
+              </p>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] uppercase font-bold text-gray-400">Target Type:</span>
+                <span className="bg-gray-100 text-gray-700 text-[10px] font-bold px-2 py-0.5 rounded uppercase">
+                  {activeMission.targetPOIType}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <p className="text-xs text-gray-500 italic">No active mission. Explore POIs to find one!</p>
+          )}
+        </div>
+      </div>
+
       <JoystickOverlay onMove={handleJoystickMove} onStop={handleJoystickStop} />
+
+      {/* Lorebook Modal */}
+      {isLorebookOpen && (
+        <div className="absolute inset-0 z-[99999] bg-black/60 backdrop-blur-sm flex justify-center items-center p-4 md:p-12 pointer-events-auto">
+          <div className="bg-[#f4ebd0] w-full max-w-2xl h-full max-h-[80vh] rounded-xl shadow-2xl overflow-hidden flex flex-col border-4 border-[#8b5a2b] animate-fade-in-up">
+            <div className="bg-[#8b5a2b] text-[#f4ebd0] p-4 flex justify-between items-center shadow-md z-10">
+              <h2 className="text-2xl font-serif font-bold tracking-widest uppercase">The Lorebook</h2>
+              <button onClick={() => setIsLorebookOpen(false)} className="text-[#f4ebd0] text-xl font-bold hover:text-white transition-colors p-2">✕</button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              {lorebook.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center opacity-70">
+                  <span className="text-6xl mb-4">🕸️</span>
+                  <p className="text-center text-[#8b5a2b] italic font-serif text-lg">The pages are empty.<br/>Explore the world to uncover its secrets.</p>
+                </div>
+              ) : (
+                lorebook.map((entry, idx) => (
+                  <div key={idx} className="border-b border-[#d2b48c] pb-4 last:border-0 relative">
+                    <span className="absolute top-0 right-0 text-[10px] font-bold text-[#8b5a2b]/60 uppercase bg-[#d2b48c]/30 px-2 py-0.5 rounded-full">{entry.poiType}</span>
+                    <h3 className="font-serif font-bold text-[#5c3a21] text-lg mb-2 pr-20">{entry.poiName}</h3>
+                    <p className="font-serif text-[#3e2723] leading-relaxed text-sm md:text-base">"{entry.narrative}"</p>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

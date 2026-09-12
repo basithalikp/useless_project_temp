@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useMemo, useState } from 'react';
 import MapLibreMap, { Layer, Source, Marker } from 'react-map-gl/maplibre';
 import type { POI } from '../utils/overpass';
 import { generateLoreForPOI } from '../utils/gemini';
+import type { LoreEntry, Mission } from '../utils/gemini';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 interface MapProps {
@@ -11,9 +12,17 @@ interface MapProps {
   geoJsonData: any;
   isSatelliteMode: boolean;
   nearbyPOIs?: POI[];
+  setXp: React.Dispatch<React.SetStateAction<number>>;
+  lorebook: LoreEntry[];
+  setLorebook: React.Dispatch<React.SetStateAction<LoreEntry[]>>;
+  activeMission: Mission | null;
+  setActiveMission: React.Dispatch<React.SetStateAction<Mission | null>>;
 }
 
-export const Map: React.FC<MapProps> = ({ position, avatarUrl, isArMode, geoJsonData, isSatelliteMode, nearbyPOIs = [] }) => {
+export const Map: React.FC<MapProps> = ({ 
+  position, avatarUrl, isArMode, geoJsonData, isSatelliteMode, nearbyPOIs = [],
+  setXp, lorebook, setLorebook, activeMission, setActiveMission
+}) => {
   const mapRef = useRef<any>(null);
   
   // Track generated lores for POIs. Key is poi.id
@@ -25,9 +34,48 @@ export const Map: React.FC<MapProps> = ({ position, avatarUrl, isArMode, geoJson
     setActiveLorePOI(poi);
     if (lores[poi.id]?.loading || lores[poi.id]?.text) return; // already loading or loaded
     
+    // Award XP for discovering POI
+    let earnedXP = 10;
+    
+    // Check if it completes active mission
+    let completedMission = false;
+    if (activeMission && activeMission.targetPOIType.toLowerCase() === poi.type.toLowerCase()) {
+      earnedXP += 50; // Mission Complete
+      completedMission = true;
+    }
+    
+    setXp(prev => prev + earnedXP);
+    if (completedMission) {
+      setActiveMission(null);
+    }
+    
     setLores(prev => ({ ...prev, [poi.id]: { loading: true, text: '' } }));
-    const generatedText = await generateLoreForPOI(poi.name, poi.type);
-    setLores(prev => ({ ...prev, [poi.id]: { loading: false, text: generatedText } }));
+    
+    // Fetch JSON from Gemini API
+    const response = await generateLoreForPOI(poi.name, poi.type, lorebook, activeMission);
+    
+    if (response) {
+      setLores(prev => ({ ...prev, [poi.id]: { loading: false, text: response.narrative } }));
+      
+      // Update Lorebook
+      setLorebook(prev => [...prev, {
+        id: poi.id,
+        poiName: poi.name,
+        poiType: poi.type,
+        narrative: response.narrative
+      }]);
+
+      // Accept new mission
+      if (response.next_mission_objective && response.mission_text) {
+        setActiveMission({
+          targetPOIType: response.next_mission_objective,
+          missionText: response.mission_text
+        });
+        setXp(prev => prev + 5); // XP for accepting mission
+      }
+    } else {
+      setLores(prev => ({ ...prev, [poi.id]: { loading: false, text: "The ancient texts are silent." } }));
+    }
   };
 
   useEffect(() => {
