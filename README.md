@@ -2,26 +2,25 @@
 
 
 
-# Geo-Tale Explorers 🎯
+# LiveMap 🎯
 
 
 ## Basic Details
-### Team Name: [Name]
+### Team Name: [Red Pill]
 
 
 ### Team Members
-- Team Lead: [Name] - [College]
-- Member 2: [Name] - [College]
-- Member 3: [Name] - [College]
+- Team Lead: [Basith Ali KP] - [NSS College of Engineering, Palakkad]
+- Member 2: [Bensen Biju] - [NSS College of Engineering, Palakkad]
 
 ### Project Description
-Geo-Tale Explorers is a mobile-first web app (PWA) where users explore a real-world map to unlock a location-based, AI-generated branching story with real-time multiplayer party syncing.
+LiveMap is a web based game where users explore a real-world map using open street maps to unlock a location-based, AI-generated branching story with real-time multiplayer party syncing and lorebooks
 
 ### The Problem (that doesn't exist)
-[What ridiculous problem are you solving?]
+[Creating a RPG that changes dynamically according to real life]
 
 ### The Solution (that nobody asked for)
-[How are you solving it? Keep it fun!]
+[Using Open Street maps for map and Storyline, Avatars and Powers the game takes 'interactive' to next level]
 
 ## Technical Details
 ### Technologies/Components Used
@@ -31,13 +30,8 @@ For Software:
 - Libraries: Leaflet.js, React-Leaflet, react-joystick-component
 - Tools: Google Gemini API (Story generation), Nominatim OSM API (Reverse geocoding), Firebase (Multiplayer Syncing)
 
-For Hardware:
-- [List main components]
-- [List specifications]
-- [List tools required]
-
 ### Implementation
-For Software:
+For Software : [Check this link](https://useless-project-temp-chi-topaz.vercel.app/)
 # Installation
 ```bash
 npm install
@@ -51,51 +45,29 @@ npm run dev
 ### Project Documentation
 For Software:
 
-# Screenshots (Add at least 3)
-![Screenshot1](Add screenshot 1 here with proper name)
-*Add caption explaining what this shows*
+# Screenshots
+![3D Mode With Horse](./screenshots/3DModeWithHorse.png)
+*3D map mode displaying dynamic building extrusions and a player character horse avatar.*
 
-![Screenshot2](Add screenshot 2 here with proper name)
-*Add caption explaining what this shows*
+![Lore Generation](./screenshots/LoreGeneration.png)
+*Lore Generation interface showing location-based, AI-generated branching story using the Gemini API.*
 
-![Screenshot3](Add screenshot 3 here with proper name)
-*Add caption explaining what this shows*
+![Normal View](./screenshots/normalView.png)
+*Normal view showcasing the default interactive map exploration with virtual joystick.*
 
-# Diagrams
-![Workflow](Add your workflow/architecture diagram here)
-*Add caption explaining your workflow*
+![Satellite View](./screenshots/satelliteView.png)
+*Satellite view displaying the map with real-world satellite imagery.*
 
-For Hardware:
 
-# Schematic & Circuit
-![Circuit](Add your circuit diagram here)
-*Add caption explaining connections*
-
-![Schematic](Add your schematic diagram here)
-*Add caption explaining the schematic*
-
-# Build Photos
-![Components](Add photo of your components here)
-*List out all components shown*
-
-![Build](Add photos of build process here)
-*Explain the build steps*
-
-![Final](Add photo of final product here)
-*Explain the final build*
 
 ### Project Demo
 # Video
 [Add your demo video link here]
 *Explain what the video demonstrates*
 
-# Additional Demos
-[Add any extra demo materials/links]
-
 ## Team Contributions
-- [Name 1]: [Specific contributions]
-- [Name 2]: [Specific contributions]
-- [Name 3]: [Specific contributions]
+- [Basith Ali KP]: [Lore implementation, Avatar Creation, Missions]
+- [Bensen Biju]: [Map, 3D View, Avatar rules]
 
 ---
 Made with ❤️ at TinkerHub Useless Projects 
