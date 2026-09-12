@@ -18,9 +18,11 @@ export const Map: React.FC<MapProps> = ({ position, avatarUrl, isArMode, geoJson
   
   // Track generated lores for POIs. Key is poi.id
   const [lores, setLores] = useState<Record<string, { loading: boolean, text: string }>>({});
+  const [activeLorePOI, setActiveLorePOI] = useState<POI | null>(null);
 
   const handleRevealLore = async (poi: POI, e: React.MouseEvent) => {
     e.stopPropagation(); // prevent map click
+    setActiveLorePOI(poi);
     if (lores[poi.id]?.loading || lores[poi.id]?.text) return; // already loading or loaded
     
     setLores(prev => ({ ...prev, [poi.id]: { loading: true, text: '' } }));
@@ -197,26 +199,12 @@ export const Map: React.FC<MapProps> = ({ position, avatarUrl, isArMode, geoJson
                   
                   {/* Lore Section */}
                   <div className="mt-2 w-full">
-                    {!lores[poi.id] && (
-                      <button 
-                        onClick={(e) => handleRevealLore(poi, e)}
-                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-1 px-2 rounded transition-colors"
-                      >
-                        Reveal Lore 📖
-                      </button>
-                    )}
-                    
-                    {lores[poi.id]?.loading && (
-                      <div className="text-xs text-indigo-500 text-center py-2 animate-pulse font-bold">
-                        Consulting the spirits... 🔮
-                      </div>
-                    )}
-
-                    {lores[poi.id]?.text && (
-                      <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded border border-gray-100 max-h-32 overflow-y-auto italic">
-                        "{lores[poi.id].text}"
-                      </div>
-                    )}
+                    <button 
+                      onClick={(e) => handleRevealLore(poi, e)}
+                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-1.5 px-2 rounded transition-colors shadow-sm"
+                    >
+                      {lores[poi.id]?.text ? "Read Lore 📖" : "Reveal Lore 📖"}
+                    </button>
                   </div>
 
                   {/* Tooltip triangle at the bottom */}
@@ -227,6 +215,56 @@ export const Map: React.FC<MapProps> = ({ position, avatarUrl, isArMode, geoJson
           })}
         </MapLibreMap>
       </div>
+
+      {/* Floating Lore Menu */}
+      {activeLorePOI && (
+        <div className="absolute inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-md p-6 pointer-events-auto">
+          <div className="bg-white rounded-[2rem] shadow-2xl overflow-hidden w-full max-w-lg transform scale-100 transition-transform">
+            <div className="relative h-56">
+              <img 
+                src={`https://loremflickr.com/600/400/${activeLorePOI.type}?lock=${activeLorePOI.id.replace(/\D/g, '') || '1'}`} 
+                alt={activeLorePOI.type} 
+                className="w-full h-full object-cover" 
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#1a1a2e]/90 via-[#1a1a2e]/40 to-transparent" />
+              <button 
+                onClick={() => setActiveLorePOI(null)}
+                className="absolute top-4 right-4 bg-black/30 hover:bg-black/60 text-white rounded-full w-10 h-10 flex items-center justify-center backdrop-blur-sm transition-colors text-xl font-bold"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+              <div className="absolute bottom-6 left-6 right-6">
+                <span className="inline-block bg-indigo-500 text-white text-[10px] uppercase font-bold tracking-widest py-1 px-3 rounded-full mb-2 shadow-lg">
+                  {activeLorePOI.type}
+                </span>
+                <h2 className="text-3xl font-extrabold text-white leading-tight drop-shadow-md">
+                  {activeLorePOI.name}
+                </h2>
+              </div>
+            </div>
+            
+            <div className="p-8 min-h-[200px] flex flex-col justify-center items-center bg-[#f8f9fa]">
+              {lores[activeLorePOI.id]?.loading ? (
+                <div className="flex flex-col items-center justify-center space-y-5 py-6">
+                  <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin shadow-sm" />
+                  <p className="text-indigo-600 font-bold tracking-wide animate-pulse">Consulting the ancient spirits...</p>
+                </div>
+              ) : lores[activeLorePOI.id]?.text ? (
+                <p className="text-xl text-gray-800 italic leading-relaxed text-center font-serif relative">
+                  <span className="text-5xl text-indigo-200 absolute -top-4 -left-6 leading-none">"</span>
+                  {lores[activeLorePOI.id].text}
+                  <span className="text-5xl text-indigo-200 absolute -bottom-8 -right-6 leading-none">"</span>
+                </p>
+              ) : (
+                <p className="text-gray-400 text-center italic">
+                  Lore is mysteriously missing.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

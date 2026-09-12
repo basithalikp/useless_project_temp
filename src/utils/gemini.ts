@@ -10,8 +10,17 @@ export async function generateLoreForPOI(poiName: string, poiType: string): Prom
     return "The ancient texts are silent. (Missing API Key)";
   }
 
-  // Generate a random year from 1000 to 2200
-  const randomYear = Math.floor(Math.random() * (2200 - 1000 + 1)) + 1000;
+  // 50% chance for past, 50% chance for future
+  const isFuture = Math.random() > 0.5;
+  let randomYear: number;
+  
+  if (isFuture) {
+    // Random future year from 2027 to 3000
+    randomYear = Math.floor(Math.random() * (3000 - 2027 + 1)) + 2027;
+  } else {
+    // Random past year from 1000 to 2025
+    randomYear = Math.floor(Math.random() * (2025 - 1000 + 1)) + 1000;
+  }
 
   // Decide whether it's past, present, or future context for flavor
   let era = "the past";
