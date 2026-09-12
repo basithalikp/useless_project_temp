@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+.container {
+  width: 400px; height: 400px;
+  background: lightblue;
+  perspective: 800px;
+  transform-style: preserve-3d;
+}
+.map-css-rotate {
+  width: 100%; height: 100%;
+  transform: rotateX(50deg);
+  transform-style: preserve-3d;
+}
+.maplibregl-map {
+  width: 100%; height: 100%;
+  background: pink;
+  transform-style: preserve-3d;
+}
+.maplibregl-canvas-container {
+  width: 100%; height: 100%;
+  transform-style: preserve-3d;
+}
+.maplibregl-marker {
+  transform: translate(200px, 200px);
+  transform-style: preserve-3d; 
+}
+.popup {
+  width: 100px; height: 50px;
+  background: red;
+  transform: rotateX(-50deg);
+  transform-origin: bottom center;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="map-css-rotate">
+    <div class="maplibregl-map">
+      <div class="maplibregl-canvas-container">
+        <div class="maplibregl-marker">
+          <div class="popup">Hello</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

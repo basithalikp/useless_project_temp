@@ -23,8 +23,8 @@ export interface GeminiResponse {
 }
 
 export async function generateLoreForPOI(
-  poiName: string, 
-  poiType: string, 
+  poiName: string,
+  poiType: string,
   lorebook: LoreEntry[],
   activeMission: Mission | null
 ): Promise<GeminiResponse | null> {
@@ -36,7 +36,7 @@ export async function generateLoreForPOI(
   // 50% chance for past, 50% chance for future
   const isFuture = Math.random() > 0.5;
   let randomYear: number;
-  
+
   if (isFuture) {
     // Random future year from 2027 to 3000
     randomYear = Math.floor(Math.random() * (3000 - 2027 + 1)) + 2027;
@@ -50,8 +50,8 @@ export async function generateLoreForPOI(
   if (randomYear > 2026) era = "the future";
   if (randomYear > 1990 && randomYear <= 2026) era = "recent history";
 
-  const historyContext = lorebook.length > 0 
-    ? `\n\nHere is the story so far:\n${lorebook.map(l => `- At a ${l.poiType} named ${l.poiName}: ${l.narrative}`).join('\n')}` 
+  const historyContext = lorebook.length > 0
+    ? `\n\nHere is the story so far:\n${lorebook.map(l => `- At a ${l.poiType} named ${l.poiName}: ${l.narrative}`).join('\n')}`
     : '';
 
   const missionContext = activeMission
@@ -70,13 +70,13 @@ Do not include any pleasantries, just the story.${historyContext}${missionContex
 You MUST return your response as a valid JSON object matching exactly this schema:
 {
   "narrative": "Your 2-3 sentence lore here.",
-  "next_mission_objective": "A common location type string (e.g. 'hotel', 'hospital', 'shop', 'park', 'bank', etc.) that the player must visit next.",
+  "next_mission_objective": "A common location type string (only allowed to take values : 'hotel', 'hospital', 'market', 'park', 'bank', 'school', 'museum', 'landmark') that the player must visit next.",
   "mission_text": "A short, 1-sentence prompt telling the player what to do at the next objective."
 }`;
 
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${GEMINI_API_KEY}`,
       {
         method: "POST",
         headers: {
@@ -98,7 +98,7 @@ You MUST return your response as a valid JSON object matching exactly this schem
 
     const data = await response.json();
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    
+
     if (text) {
       return JSON.parse(text) as GeminiResponse;
     }

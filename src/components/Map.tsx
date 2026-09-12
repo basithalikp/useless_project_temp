@@ -238,25 +238,34 @@ export const Map: React.FC<MapProps> = ({
                 latitude={poi.lat} 
                 anchor="bottom"
               >
-                <div className="bg-white rounded-xl p-2 shadow-2xl border-2 border-indigo-200 flex flex-col items-center w-48 pointer-events-auto transform hover:scale-105 transition-transform cursor-default">
-                  <img src={imgUrl} alt={poi.type} className="w-full h-24 object-cover rounded-lg mb-2 bg-gray-100" />
-                  <h3 className="text-sm font-bold text-gray-800 text-center leading-tight line-clamp-2">{poi.name}</h3>
-                  <span className="text-[10px] uppercase font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full mt-1">
-                    {poi.type}
-                  </span>
-                  
-                  {/* Lore Section */}
-                  <div className="mt-2 w-full">
-                    <button 
-                      onClick={(e) => handleRevealLore(poi, e)}
-                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-1.5 px-2 rounded transition-colors shadow-sm"
-                    >
-                      {lores[poi.id]?.text ? "Read Lore 📖" : "Reveal Lore 📖"}
-                    </button>
-                  </div>
+                <div 
+                  className="bg-white rounded-xl p-2 shadow-2xl border-2 border-indigo-200 flex flex-col items-center w-48 pointer-events-auto cursor-default"
+                  style={{
+                    transform: isArMode ? 'rotateX(-50deg)' : 'none',
+                    transformOrigin: 'bottom center',
+                    transition: 'transform 1s ease-in-out'
+                  }}
+                >
+                  <div className="transform hover:scale-105 transition-transform w-full flex flex-col items-center">
+                    <img src={imgUrl} alt={poi.type} className="w-full h-24 object-cover rounded-lg mb-2 bg-gray-100" />
+                    <h3 className="text-sm font-bold text-gray-800 text-center leading-tight line-clamp-2">{poi.name}</h3>
+                    <span className="text-[10px] uppercase font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full mt-1">
+                      {poi.type}
+                    </span>
+                    
+                    {/* Lore Section */}
+                    <div className="mt-2 w-full">
+                      <button 
+                        onClick={(e) => handleRevealLore(poi, e)}
+                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-1.5 px-2 rounded transition-colors shadow-sm"
+                      >
+                        {lores[poi.id]?.text ? "Read Lore 📖" : "Reveal Lore 📖"}
+                      </button>
+                    </div>
 
-                  {/* Tooltip triangle at the bottom */}
-                  <div className="absolute -bottom-2 w-4 h-4 bg-white border-b-2 border-r-2 border-indigo-200 transform rotate-45"></div>
+                    {/* Tooltip triangle at the bottom */}
+                    <div className="absolute -bottom-2 w-4 h-4 bg-white border-b-2 border-r-2 border-indigo-200 transform rotate-45"></div>
+                  </div>
                 </div>
               </Marker>
             );
