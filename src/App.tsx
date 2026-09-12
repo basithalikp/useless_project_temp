@@ -13,6 +13,8 @@ function App() {
   const [isMoving, setIsMoving] = useState<boolean>(false);
   const [geoJsonData, setGeoJsonData] = useState<any>(null); // For MapLibre 3D Buildings
   
+  const [isSatelliteMode, setIsSatelliteMode] = useState<boolean>(false);
+
   const joystickRef = useRef<{ x: number; y: number } | null>(null);
   const keysRef = useRef<{ w: boolean; a: boolean; s: boolean; d: boolean }>({ w: false, a: false, s: false, d: false });
   const animationRef = useRef<number | null>(null);
@@ -125,16 +127,30 @@ function App() {
 
   return (
     <div className="w-screen h-screen relative font-sans overflow-hidden bg-[#b6e3f4]">
-      <Map position={position} avatarUrl={avatarUrl} isArMode={isArMode} geoJsonData={geoJsonData} />
+      <Map 
+        position={position} 
+        avatarUrl={avatarUrl} 
+        isArMode={isArMode} 
+        geoJsonData={geoJsonData} 
+        isSatelliteMode={isSatelliteMode}
+      />
       
       {isArMode && <Character3D isMoving={isMoving} />}
       
-      <button 
-        onClick={() => setIsArMode(!isArMode)}
-        className="absolute top-4 right-4 z-[1000] bg-white text-blue-600 font-bold py-2 px-6 rounded-full drop-shadow-md border-2 border-blue-500 hover:bg-blue-50 transition-colors"
-      >
-        {isArMode ? '🔙 Revert to Classic 2D' : '🦊 Pokemon Go Mode'}
-      </button>
+      <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2">
+        <button 
+          onClick={() => setIsArMode(!isArMode)}
+          className="bg-white text-blue-600 font-bold py-2 px-6 rounded-full drop-shadow-md border-2 border-blue-500 hover:bg-blue-50 transition-colors"
+        >
+          {isArMode ? '🔙 Revert to Classic 2D' : '🦊 Pokemon Go Mode'}
+        </button>
+        <button 
+          onClick={() => setIsSatelliteMode(!isSatelliteMode)}
+          className="bg-gray-800 text-white font-bold py-2 px-6 rounded-full drop-shadow-md border-2 border-gray-600 hover:bg-gray-700 transition-colors"
+        >
+          {isSatelliteMode ? '🗺️ Map View' : '🛰️ Satellite View'}
+        </button>
+      </div>
 
       <div className="absolute top-4 left-4 z-[1000] bg-white/90 backdrop-blur text-gray-800 text-sm font-medium py-3 px-5 rounded-2xl drop-shadow-md border border-gray-100 max-w-xs pointer-events-none">
         <h1 className="text-lg font-bold text-blue-600 mb-1">Geo-Tale</h1>

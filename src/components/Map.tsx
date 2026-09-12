@@ -7,9 +7,10 @@ interface MapProps {
   avatarUrl: string;
   isArMode: boolean;
   geoJsonData: any;
+  isSatelliteMode: boolean;
 }
 
-export const Map: React.FC<MapProps> = ({ position, avatarUrl, isArMode, geoJsonData }) => {
+export const Map: React.FC<MapProps> = ({ position, avatarUrl, isArMode, geoJsonData, isSatelliteMode }) => {
   const mapRef = useRef<any>(null);
 
   useEffect(() => {
@@ -21,13 +22,16 @@ export const Map: React.FC<MapProps> = ({ position, avatarUrl, isArMode, geoJson
     }
   }, [position]);
 
-  const filterStyle = isArMode ? 'saturate(200%) hue-rotate(15deg) brightness(1.1) contrast(1.1)' : 'none';
+  // We only apply the vibrant Pokemon Go filter if we are NOT in satellite mode, 
+  // because satellite imagery looks strange with extreme saturation/hue shifting.
+  const filterStyle = (isArMode && !isSatelliteMode) 
+    ? 'saturate(200%) hue-rotate(15deg) brightness(1.1) contrast(1.1)' 
+    : 'none';
 
   // Filter building polygons from the geoJson payload
   const buildingsGeoJson = useMemo(() => {
     if (!geoJsonData || !geoJsonData.features) return { type: 'FeatureCollection' as const, features: [] };
     
-    // We only want polygons that have the building tag for 3D extrusion
     const buildings = geoJsonData.features.filter((f: any) => 
       f.geometry.type === 'Polygon' && f.properties.building
     );
@@ -35,7 +39,6 @@ export const Map: React.FC<MapProps> = ({ position, avatarUrl, isArMode, geoJson
     return { type: 'FeatureCollection' as const, features: buildings };
   }, [geoJsonData]);
 
-  // Filter building polygons that have names for our text labels
   const buildingLabelsGeoJson = useMemo(() => {
     if (!geoJsonData || !geoJsonData.features) return { type: 'FeatureCollection' as const, features: [] };
     
@@ -45,6 +48,33 @@ export const Map: React.FC<MapProps> = ({ position, avatarUrl, isArMode, geoJson
     
     return { type: 'FeatureCollection' as const, features: namedBuildings };
   }, [geoJsonData]);
+
+  // Define the Satellite Style Object
+  const satelliteStyle = {
+    version: 8 as const,
+    sources: {
+      'satellite': {
+        type: 'raster' as const,
+        tiles: [
+          'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+        ],
+        tileSize: 256,
+        attribution: 'Tiles &copy; Esri'
+      }
+    },
+    layers: [
+      {
+        id: 'satellite-layer',
+        type: 'raster' as const,
+        source: 'satellite',
+        minzoom: 0,
+        maxzoom: 22
+      }
+    ]
+  };
+
+  // Carto Voyager Style for default maps
+  const defaultStyle = "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json";
 
   return (
     <div className="w-full h-full overflow-hidden bg-[#b6e3f4]" style={{ perspective: '800px' }}>
@@ -66,7 +96,7 @@ export const Map: React.FC<MapProps> = ({ position, avatarUrl, isArMode, geoJson
             bearing: 0
           }}
           style={{ width: '100%', height: '100%' }}
-          mapStyle="https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json"
+          mapStyle={isSatelliteMode ? satelliteStyle : defaultStyle}
           interactive={false} 
         >
           {/* Overpass Buildings 3D Extrusion Layer */}
@@ -76,15 +106,14 @@ export const Map: React.FC<MapProps> = ({ position, avatarUrl, isArMode, geoJson
                 id="3d-buildings-extrusion"
                 type="fill-extrusion"
                 paint={{
-                  'fill-extrusion-color': '#e2e8f0',
-                  // Use real height if present, otherwise default to a robust 20 meters
+                  'fill-extrusion-color': isSatelliteMode ? '#a3a3a3' : '#e2e8f0', // Darker blocks in satellite mode
                   'fill-extrusion-height': [
                     'coalesce',
                     ['to-number', ['get', 'height']],
                     20
                   ],
                   'fill-extrusion-base': 0,
-                  'fill-extrusion-opacity': 0.9
+                  'fill-extrusion-opacity': isSatelliteMode ? 0.7 : 0.9 // More transparent so we see the satellite ground
                 }}
               />
             </Source>
@@ -98,15 +127,14 @@ export const Map: React.FC<MapProps> = ({ position, avatarUrl, isArMode, geoJson
                 type="symbol"
                 layout={{
                   'text-field': ['get', 'name'],
-                  'text-font': ['Open Sans Regular'], // Standard web font supported by most styles
+                  'text-font': ['Open Sans Regular'],
                   'text-size': 12,
                   'text-anchor': 'top',
-                  // Only show names when tilted (AR Mode) or at high zoom levels
                   'text-allow-overlap': false
                 }}
                 paint={{
-                  'text-color': '#333333',
-                  'text-halo-color': '#ffffff',
+                  'text-color': isSatelliteMode ? '#ffffff' : '#333333',
+                  'text-halo-color': isSatelliteMode ? '#000000' : '#ffffff',
                   'text-halo-width': 2
                 }}
               />
