@@ -1,0 +1,3 @@
+@echo off
+echo Starting Geo-Tale Explorers...
+npm run dev
