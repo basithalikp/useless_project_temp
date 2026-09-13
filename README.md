@@ -6,21 +6,21 @@
 
 
 ## Basic Details
-### Team Name: [Red Pill]
+### Team Name: Red Pill
 
 
 ### Team Members
-- Team Lead: [Basith Ali KP] - [NSS College of Engineering, Palakkad]
-- Member 2: [Bensen Biju] - [NSS College of Engineering, Palakkad]
+- Team Lead: Basith Ali KP - NSS College of Engineering, Palakkad
+- Member 2: Bensen Biju - NSS College of Engineering, Palakkad
 
 ### Project Description
 LiveMap is a web based game where users explore a real-world map using open street maps to unlock a location-based, AI-generated branching story with real-time multiplayer party syncing and lorebooks
 
 ### The Problem (that doesn't exist)
-[Creating a RPG that changes dynamically according to real life]
+Creating a RPG that changes dynamically according to real life
 
 ### The Solution (that nobody asked for)
-[Using Open Street maps for map and Storyline, Avatars and Powers the game takes 'interactive' to next level]
+Using Open Street maps for map and Storyline, Avatars and Powers the game takes 'interactive' to next level
 
 ## Technical Details
 ### Technologies/Components Used
@@ -62,12 +62,12 @@ For Software:
 
 ### Project Demo
 # Video
-[Add your demo video link here]
-*Explain what the video demonstrates*
+[Video Link](https://drive.google.com/file/d/12Mc28_yRqsMrScy3km2kAkIJWG0-1Jpq/view?usp=sharing)
+*This video demonstrates the core gameplay loop, showcasing avatar movement, exploration on a real-world map, the virtual joystick interface, and AI-generated story elements.*
 
 ## Team Contributions
-- [Basith Ali KP]: [Lore implementation, Avatar Creation, Missions]
-- [Bensen Biju]: [Map, 3D View, Avatar rules]
+- Basith Ali KP: [Lore implementation, Avatar Creation, Missions]
+- Bensen Biju: [Map, 3D View, Avatar rules]
 
 ---
 Made with ❤️ at TinkerHub Useless Projects 
